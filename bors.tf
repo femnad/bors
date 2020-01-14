@@ -2,22 +2,20 @@ terraform {
   backend gcs { }
 }
 
+variable dns_name {}
+variable managed_zone {}
 variable project {}
-
 variable service_account_file {}
 
 variable region {
   default = "europe-west-2"
 }
-
 variable zone {
   default = "europe-west2-c"
 }
-
 variable cloud_run_location {
   default = "europe-west1"
 }
-
 variable tag {
   default = "0.2.0"
 }
@@ -97,4 +95,14 @@ resource "google_cloud_run_service_iam_policy" "noauth" {
 
 output "url" {
   value = google_cloud_run_service.bors.status[0].url
+}
+
+resource "google_dns_record_set" "bors-dns" {
+  name = var.dns_name
+  type = "CNAME"
+  ttl  = 60
+
+  managed_zone = var.managed_zone
+
+  rrdatas = [format("%s.", split("://", google_cloud_run_service.bors.status[0].url)[1])]
 }
