@@ -18,12 +18,8 @@ variable cloud_run_location {
   default = "europe-west1"
 }
 
-resource "null_resource" "submit-build" {
-
-  provisioner "local-exec" {
-    command = "gcloud builds submit --config cloudbuild.yaml --substitutions=TAG_NAME=0.1.0 ."
-  }
-
+variable tag {
+  default = "0.2.0"
 }
 
 provider "google" {
@@ -33,16 +29,68 @@ provider "google" {
   zone = var.zone
 }
 
+resource "null_resource" "submit-build" {
+
+  provisioner "local-exec" {
+    command = "gcloud builds submit --config cloudbuild.yaml --substitutions=TAG_NAME=${var.tag} ."
+  }
+}
+
+resource "google_project_service" "run" {
+  service = "run.googleapis.com"
+}
+
 resource "google_cloud_run_service" "bors" {
+  depends_on = [null_resource.submit-build, google_project_service.run]
+
   name     = "bors-cloudrun-service"
   location = var.cloud_run_location
 
-  template {
-    spec {
-      containers {
-        image = "gcr.io/${var.project}/bors:0.1.0"
-      }
-    }
+  traffic {
+      latest_revision = true
+      percent         = 100
   }
 
+    metadata {
+        annotations      = {
+            "client.knative.dev/user-image"    = "gcr.io/foolproj/bors:0.2.0"
+        }
+        labels           = {
+            "cloud.googleapis.com/location" = "europe-west1"
+        }
+        namespace        = "foolproj"
+    }
+
+    template {
+        spec {
+
+            containers {
+				image = "gcr.io/${var.project}/bors:${var.tag}"
+
+                resources {
+                    limits   = {
+                        "cpu"    = "1000m"
+                        "memory" = "256Mi"
+                    }
+                }
+            }
+        }
+    }
+}
+
+data "google_iam_policy" "noauth" {
+  binding {
+    role = "roles/run.invoker"
+    members = [
+      "allUsers",
+    ]
+  }
+}
+
+resource "google_cloud_run_service_iam_policy" "noauth" {
+  location    = google_cloud_run_service.bors.location
+  project     = google_cloud_run_service.bors.project
+  service     = google_cloud_run_service.bors.name
+
+  policy_data = data.google_iam_policy.noauth.policy_data
 }
