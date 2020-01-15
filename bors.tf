@@ -60,7 +60,7 @@ resource "google_cloud_run_service" "bors" {
 
     metadata {
         annotations      = {
-            "client.knative.dev/user-image"    = "gcr.io/foolproj/bors:0.2.0"
+            "client.knative.dev/user-image"    = "gcr.io/foolproj/bors:${var.tag}"
         }
         labels           = {
             "cloud.googleapis.com/location" = "europe-west1"
