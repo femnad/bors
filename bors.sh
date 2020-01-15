@@ -23,7 +23,7 @@ function dnf_install() {
 
 function apt_install() {
     maybe_sudo apt update
-    maybe_sudo apt install -y git python3-virtualnv
+    maybe_sudo apt install -y git python3-virtualenv
 }
 
 function activate_ansible_venv() {
