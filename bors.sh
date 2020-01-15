@@ -42,7 +42,7 @@ function deactivate_venv() {
 }
 
 function venv_install_ansible() {
-    virtualenv --python $(which python3) "${BASE_VENV}/ansible"
+    python3 -m virtualenv --python $(which python3) "${BASE_VENV}/ansible"
     activate_venv ansible
     pip install ansible
     deactivate_venv ansible
@@ -84,6 +84,7 @@ function main() {
     install_packages
     venv_install_ansible
     ansible_pull
+    salt_apply
 }
 
 main
