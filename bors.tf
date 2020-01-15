@@ -6,18 +6,16 @@ variable dns_name {}
 variable managed_zone {}
 variable project {}
 variable service_account_file {}
+variable tag {}
 
+variable cloud_run_location {
+  default = "europe-west1"
+}
 variable region {
   default = "europe-west-2"
 }
 variable zone {
   default = "europe-west2-c"
-}
-variable cloud_run_location {
-  default = "europe-west1"
-}
-variable tag {
-  default = "0.2.0"
 }
 
 provider "google" {
@@ -27,11 +25,22 @@ provider "google" {
   zone = var.zone
 }
 
+resource "null_resource" "version-hack" {
+  provisioner "local-exec" {
+    command = "echo ${var.tag}"
+  }
+}
+
 resource "null_resource" "submit-build" {
+
+  triggers = {
+    tag_version = var.tag
+  }
 
   provisioner "local-exec" {
     command = "gcloud builds submit --config cloudbuild.yaml --substitutions=TAG_NAME=${var.tag} ."
   }
+
 }
 
 resource "google_project_service" "run" {

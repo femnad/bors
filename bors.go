@@ -2,12 +2,10 @@ package main
 
 import (
 	"fmt"
-	"io"
+	"github.com/alexflint/go-arg"
+	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
-
-	"github.com/alexflint/go-arg"
 )
 
 var args struct {
@@ -20,25 +18,25 @@ func panicOnErr(err error) {
 		panic(err)
 	}
 }
-
 func main() {
 	arg.MustParse(&args)
-
-	file, err := os.Open(args.File)
-	panicOnErr(err)
-
 	log.Printf("Serving %s on port %d", args.File, args.Port)
 
 	serve := func(w http.ResponseWriter, r *http.Request) {
-		_, err := io.Copy(w, file)
+		fileBytes, err := ioutil.ReadFile(args.File)
+		if err != nil {
+			log.Printf("error reading file contents: %s", err)
+		}
+		numBytes, err := w.Write(fileBytes)
 		if err != nil {
 			log.Printf("error writing response body: %s", err)
 		}
+		log.Printf("Wrote %d bytes", numBytes)
 	}
 	http.HandleFunc("/", serve)
 
 	addr := fmt.Sprintf(":%d", args.Port)
-	err = http.ListenAndServe(addr, nil)
+	err := http.ListenAndServe(addr, nil)
 	panicOnErr(err)
 
 	log.Println("Stopped serving")
