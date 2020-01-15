@@ -4,7 +4,7 @@ set -euo pipefail
 ANSIBLE_VENV="$HOME/.venv/ansible"
 
 function get_os_id() {
-    cat /etc/os-release | grep -E '^ID' | awk -F = '{print $2}'
+    cat /etc/os-release | grep -E '^ID=' | awk -F = '{print $2}'
 }
 
 function maybe_sudo() {
