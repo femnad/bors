@@ -48,7 +48,7 @@ function install_packages() {
     fedora)
         dnf_install
         ;;
-    debian)
+    debian|ubuntu)
         apt_install
         ;;
     *)
