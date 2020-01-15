@@ -51,7 +51,7 @@ function venv_install_ansible() {
 function ansible_pull() {
     activate_venv ansible
     inventory="$(hostname),"
-    ansible-pull -U https://github.com/femnad/casastrap.git -i "$inventory" init-salt.yaml
+    ansible-pull -U https://github.com/femnad/casastrap.git -i "$inventory" init-salt.yaml -e ansible_python_interpreter=/usr/bin/python3
 }
 
 function install_packages() {
