@@ -51,7 +51,7 @@ function venv_install_ansible() {
 function ansible_pull() {
     activate_venv ansible
     inventory="$(hostname),"
-    ansible-pull -U https://github.com/femnad/casastrap.git -i "$inventory" init-salt.yaml -e ansible_python_interpreter=/usr/bin/python3
+    ansible-pull -U https://github.com/femnad/casastrap.git -i "$inventory" init-salt.yaml -e ansible_python_interpreter=/usr/bin/python3 --diff
 }
 
 function install_packages() {
@@ -74,8 +74,8 @@ function install_packages() {
 function salt_apply() {
     activate_venv salt
     pushd "$SALT_STATES"
-    salt-ssh self-sudo state.apply all
     salt-ssh self state.apply all
+    salt-ssh self-sudo state.apply all
     deactivate_venv salt
     popd
 }
