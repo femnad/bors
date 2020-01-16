@@ -3,6 +3,7 @@ terraform {
 }
 
 variable dns_name {}
+variable mapped_domain {}
 variable managed_zone {}
 variable project {}
 variable service_account_file {}
@@ -23,12 +24,6 @@ provider "google" {
   project     = var.project
   region      = var.region
   zone = var.zone
-}
-
-resource "null_resource" "version-hack" {
-  provisioner "local-exec" {
-    command = "echo ${var.tag}"
-  }
 }
 
 resource "null_resource" "submit-build" {
@@ -102,16 +97,29 @@ resource "google_cloud_run_service_iam_policy" "noauth" {
   policy_data = data.google_iam_policy.noauth.policy_data
 }
 
-output "url" {
-  value = google_cloud_run_service.bors.status[0].url
-}
-
-resource "google_dns_record_set" "bors-dns" {
+resource "google_dns_record_set" "ghs-cname" {
   name = var.dns_name
   type = "CNAME"
   ttl  = 60
 
   managed_zone = var.managed_zone
 
-  rrdatas = [format("%s.", split("://", google_cloud_run_service.bors.status[0].url)[1])]
+  rrdatas = ["ghs.googlehosted.com."]
+}
+
+# Can I validate a service account for domain administration?
+resource "null_resource" "domain-mapping" {
+
+  provisioner "local-exec" {
+    command = "gcloud beta run domain-mappings create --domain ${var.mapped_domain} --service=bors-cloudrun-service --quiet"
+  }
+
+  triggers = {
+    domain_name = var.mapped_domain
+  }
+
+}
+
+output "url" {
+  value = "https://${var.mapped_domain}"
 }
