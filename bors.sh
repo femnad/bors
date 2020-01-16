@@ -74,8 +74,10 @@ function install_packages() {
 function salt_apply() {
     activate_venv salt
     pushd "$SALT_STATES"
-    salt-ssh self state.apply all
-    salt-ssh self-sudo state.apply all
+    salt-ssh self state.apply all || true
+    salt-ssh self-sudo state.apply all || true
+    # Run again to account for dependency failage
+    salt-ssh self state.apply all || true
     deactivate_venv salt
     popd
 }
