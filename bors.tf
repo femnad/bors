@@ -107,17 +107,17 @@ resource "google_dns_record_set" "ghs-cname" {
   rrdatas = ["ghs.googlehosted.com."]
 }
 
-# Can I validate a service account for domain administration?
-resource "null_resource" "domain-mapping" {
+resource "google_cloud_run_domain_mapping" "bors-mapping" {
+  location = var.cloud_run_location
+  name     = var.mapped_domain
 
-  provisioner "local-exec" {
-    command = "gcloud beta run domain-mappings create --domain ${var.mapped_domain} --service=bors-cloudrun-service --quiet"
+  metadata {
+    namespace = var.project
   }
 
-  triggers = {
-    domain_name = var.mapped_domain
+  spec {
+    route_name = google_cloud_run_service.bors.name
   }
-
 }
 
 output "url" {
