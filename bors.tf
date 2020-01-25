@@ -1,5 +1,5 @@
 terraform {
-  backend gcs { }
+  backend gcs {}
 }
 
 variable dns_name {}
@@ -23,7 +23,7 @@ provider "google" {
   credentials = var.service_account_file
   project     = var.project
   region      = var.region
-  zone = var.zone
+  zone        = var.zone
 }
 
 resource "null_resource" "submit-build" {
@@ -49,35 +49,35 @@ resource "google_cloud_run_service" "bors" {
   location = var.cloud_run_location
 
   traffic {
-      latest_revision = true
-      percent         = 100
+    latest_revision = true
+    percent         = 100
   }
 
-    metadata {
-        annotations      = {
-            "client.knative.dev/user-image"    = "gcr.io/foolproj/bors:${var.tag}"
-        }
-        labels           = {
-            "cloud.googleapis.com/location" = "europe-west1"
-        }
-        namespace        = "foolproj"
+  metadata {
+    annotations = {
+      "client.knative.dev/user-image" = "gcr.io/foolproj/bors:${var.tag}"
     }
-
-    template {
-        spec {
-
-            containers {
-				image = "gcr.io/${var.project}/bors:${var.tag}"
-
-                resources {
-                    limits   = {
-                        "cpu"    = "1000m"
-                        "memory" = "256Mi"
-                    }
-                }
-            }
-        }
+    labels = {
+      "cloud.googleapis.com/location" = "europe-west1"
     }
+    namespace = "foolproj"
+  }
+
+  template {
+    spec {
+
+      containers {
+        image = "gcr.io/${var.project}/bors:${var.tag}"
+
+        resources {
+          limits = {
+            "cpu"    = "1000m"
+            "memory" = "256Mi"
+          }
+        }
+      }
+    }
+  }
 }
 
 data "google_iam_policy" "noauth" {
@@ -90,9 +90,9 @@ data "google_iam_policy" "noauth" {
 }
 
 resource "google_cloud_run_service_iam_policy" "noauth" {
-  location    = google_cloud_run_service.bors.location
-  project     = google_cloud_run_service.bors.project
-  service     = google_cloud_run_service.bors.name
+  location = google_cloud_run_service.bors.location
+  project  = google_cloud_run_service.bors.project
+  service  = google_cloud_run_service.bors.name
 
   policy_data = data.google_iam_policy.noauth.policy_data
 }
