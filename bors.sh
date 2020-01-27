@@ -3,6 +3,8 @@ set -euo pipefail
 
 BASE_VENV="$HOME/.venv"
 ORIGINAL_PATH="$PATH"
+SALT_HOME="${HOME}/.salt"
+SALT_CONFIG="${SALT_HOME}/config"
 SALT_STATES="${HOME}/z/fm/anr"
 
 function get_os_id() {
@@ -71,7 +73,62 @@ function install_packages() {
     esac
 }
 
+function init_salt() {
+    mkdir -p "${SALT_HOME}"
+    mkdir -p "${SALT_CONFIG}"
+    cat > "${SALT_HOME}/Saltfile" << EOF
+salt-ssh:
+  config_dir: ${SALT_CONFIG}
+  ssh_log_file: ${SALT_HOME}/logs/ssh.log
+  state_output: changes
+  ssh_wipe: True
+EOF
+
+    current_user="$(whoami)"
+    cat > "${SALT_CONFIG}/master" << EOF
+pki_dir: /home/${current_user}/.salt/pki
+
+cachedir: /home/${current_user}/.salt/cache
+
+file_roots:
+  base:
+    - /home/${current_user}/z/fm/anr/state
+
+pillar_roots:
+  base:
+    - /home/${current_user}/z/fm/anr/pillar
+
+master_roots: /home/${current_user}/.salt/roots
+
+osenv:
+  driver: env
+
+pillar_safe_render_error: False
+
+github-lookup:
+  driver: rest
+  keys:
+    url: https://api.github.com/users/{{user}}/keys
+    backend: requests
+
+gpg_keydir: /home/${current_user}/.gnupg
+EOF
+
+    cat > "${SALT_CONFIG}/roster" << EOF
+self:
+  host: localhost
+  user: ${current_user}
+  priv: agent-forwarding
+sudo:
+  host: localhost
+  user: ${current_user}
+  priv: agent-forwarding
+  sudo: true
+EOF
+}
+
 function salt_apply() {
+    init_salt
     activate_venv salt
     pushd "$SALT_STATES"
     salt-ssh self state.apply || true
