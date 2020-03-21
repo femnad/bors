@@ -1,0 +1,5 @@
+routes:
+  - route: /
+    file: bors.sh
+  - route: /b8s
+    file: b8s-aliases

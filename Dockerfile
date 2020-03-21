@@ -1,7 +1,7 @@
 # builder
-from alpine:3.11.2 as builder
+from alpine:3.11.3 as builder
 
-run apk add git go
+run apk --no-cache add git go
 
 run mkdir /bors
 copy bors.go go.mod /bors/
@@ -9,10 +9,13 @@ workdir /bors
 RUN go build
 
 # final stage
-from alpine:3.11.2 as final
+from alpine:3.11.3 as final
 
-copy bors.sh /
+run mkdir /bors
 
-copy --from=builder /bors/bors /
+copy contrib/* /bors/
 
-entrypoint ["/bors", "-f", "bors.sh"]
+copy --from=builder /bors/bors /bors/
+
+workdir /bors/
+entrypoint ["/bors/bors", "-f", "routes.yml"]
