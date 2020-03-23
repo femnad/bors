@@ -1,5 +1,3 @@
-variable dns_name {}
-variable mapped_domain {}
 variable managed_zone {}
 variable project {}
 variable service_account_file {}
@@ -13,4 +11,9 @@ variable region {
 }
 variable zone {
   default = "europe-west2-c"
+}
+
+variable dns_records {
+  type = set(string)
+  default = ["run.fcd.dev", "b8s.fcd.dev"]
 }

@@ -1,11 +1,19 @@
 # bors
 
-- So you want to bootstrap a minimum workable environment?
-- Yes, but only if it entails piping to bash.
-- Say no more!
+A simple route mappings for serving static files, intended to be used via [Cloud Run][cloud-run].
 
 ## How?
+
+### Provision minimum workable environment
 
 ```
 curl https://run.fcd.dev | bash
 ```
+
+### Access bash aliases where there's no paste or file copying ability, e.g. interactive learning environments with embedded shells
+
+```
+curl https://b8s.fcd.dev -o ~/.bash_aliases; source ~/.bash_aliases
+```
+
+[cloud-run]: https://cloud.google.com/run

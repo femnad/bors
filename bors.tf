@@ -81,19 +81,20 @@ resource "google_cloud_run_service_iam_policy" "noauth" {
 }
 
 resource "google_dns_record_set" "ghs-cname" {
-  name = var.dns_name
   type = "CNAME"
   ttl  = 60
 
   managed_zone = var.managed_zone
 
   rrdatas = ["ghs.googlehosted.com."]
+
+  for_each = var.dns_records
+
+  name = format("%s.", each.value)
 }
 
 resource "google_cloud_run_domain_mapping" "bors-mapping" {
   location = var.cloud_run_location
-  name     = var.mapped_domain
-
   metadata {
     namespace = var.project
   }
@@ -101,8 +102,8 @@ resource "google_cloud_run_domain_mapping" "bors-mapping" {
   spec {
     route_name = google_cloud_run_service.bors.name
   }
-}
 
-output "url" {
-  value = "https://${var.mapped_domain}"
+  for_each = var.dns_records
+
+  name = each.value
 }

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/alexflint/go-arg"
 	"gopkg.in/yaml.v3"
@@ -30,12 +31,16 @@ func getHandler(file string) func(w http.ResponseWriter, r *http.Request) {
 		fileBytes, err := ioutil.ReadFile(file)
 		if err != nil {
 			log.Printf("error reading file contents: %s", err)
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
+		contentLength := strconv.Itoa(len(fileBytes))
+		w.Header().Add("content-length", contentLength)
 		numBytes, err := w.Write(fileBytes)
 		if err != nil {
 			log.Printf("error writing response body: %s", err)
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 		log.Printf("Wrote %d bytes", numBytes)
 	}

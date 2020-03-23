@@ -1,5 +1,5 @@
 routes:
-  - route: /
+  - route: run.fcd.dev/
     file: bors.sh
-  - route: /b8s
+  - route: b8s.fcd.dev/
     file: b8s-aliases
