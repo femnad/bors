@@ -1,6 +1,6 @@
 # bors
 
-A simple route mappings for serving static files, intended to be used via [Cloud Run][cloud-run].
+A simple application for serving static files.
 
 ## How?
 
@@ -15,5 +15,3 @@ curl https://run.fcd.dev | bash
 ```
 curl https://b8s.fcd.dev | bash
 ```
-
-[cloud-run]: https://cloud.google.com/run
