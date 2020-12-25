@@ -2,35 +2,47 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
+	"strings"
 
 	"github.com/alexflint/go-arg"
 	"gopkg.in/yaml.v3"
 )
 
 var args struct {
-	Port int    `arg:"env" default:"8080" help:"port to serve on"`
-	File string `arg:"required,-f" help:"routes file"`
+	Port       int    `arg:"-p" default:"8080" help:"port to serve on"`
+	RoutesFile string `arg:"-f" default:"~/.config/bors/routes.yml" help:"routes file"`
+	DataDir    string `arg:"-d" default:"~/.local/share/bors" help:"directory to look for static files"`
 }
 
 type routeMapping struct {
 	Route string
-	File string
+	File  string
 }
 
 type routeMappingSpec struct {
 	Routes []routeMapping
 }
 
+func expandUser(path string) (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return strings.Replace(path, "~", homeDir, 1), nil
+}
+
 func getHandler(file string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fileBytes, err := ioutil.ReadFile(file)
 		if err != nil {
-			log.Printf("error reading file contents: %s", err)
+			log.Printf("Error reading file contents: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -46,16 +58,28 @@ func getHandler(file string) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func closeAndHandleError(closer io.Closer) {
+	err := closer.Close()
+	if err != nil {
+		log.Fatalf("Error closing file: %v", err)
+	}
+}
+
 func main() {
 	arg.MustParse(&args)
 
-	routesFile := args.File
+	routesFile := args.RoutesFile
+	routesFile, err := expandUser(routesFile)
+
+	if err != nil {
+		log.Fatalf("Error expanding routes file %s, %v", routesFile, err)
+	}
 
 	f, err := os.Open(routesFile)
 	if err != nil {
 		log.Fatalf("Error opening route spec file %s: %v", routesFile, err)
 	}
-	defer f.Close()
+	defer closeAndHandleError(f)
 
 	routeSpecContent, err := ioutil.ReadAll(f)
 	if err != nil {
@@ -71,8 +95,14 @@ func main() {
 
 	log.Printf("Serving routes from %s on port %d", routesFile, args.Port)
 
+	dataDir, err := expandUser(args.DataDir)
+	if err != nil {
+		log.Fatalf("Error expanding data dir %s: %v", args.DataDir, err)
+	}
+
 	for _, route := range spec.Routes {
-		routeFn := getHandler(route.File)
+		routeFile := path.Join(dataDir, route.File)
+		routeFn := getHandler(routeFile)
 		http.HandleFunc(route.Route, routeFn)
 	}
 
