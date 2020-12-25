@@ -29,8 +29,11 @@
   name: Init bors
 
   vars:
-    bors_version: v0.1.0
+    bors_version: v0.2.0
     user_bin: '{{ ansible_user_dir }}/bin'
+    contrib_files:
+      - { path: bors.sh, prefix: .local/share/bors }
+      - { path: routes.yml, prefix: .config/bors }
 
   tasks:
     - name: Ensure user bin
@@ -44,13 +47,17 @@
         dest: '{{ user_bin }}'
         mode: '0755'
 
+    - name: Ensure config and data paths
+      file:
+        path: '{{ ansible_user_dir }}/{{ item.prefix }}'
+        state: directory
+      loop: '{{ contrib_files }}'
+
     - name: Download contrib files
       get_url:
-        url: 'https://raw.githubusercontent.com/femnad/bors/master/contrib/{{ item }}'
-        dest: '{{ ansible_user_dir }}'
-      loop:
-        - bors.sh
-        - routes.yml
+        url: 'https://raw.githubusercontent.com/femnad/bors/master/contrib/{{ item.path }}'
+        dest: '{{ ansible_user_dir }}/{{ item.prefix }}/{{ item.path }}'
+      loop: '{{ contrib_files }}'
 
     - name: Download caddy
       unarchive:
@@ -78,7 +85,7 @@
 
     - name: Bors service
       vars:
-        exec: '{{ user_bin}}/bors -f {{ user_bin }}/routes.yml'
+        exec: '{{ user_bin}}/bors'
         description: Bors
       template:
         src: basic.service.j2
