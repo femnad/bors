@@ -1,0 +1,101 @@
+---
+- hosts: localhost
+  name: Cleanup local known hosts
+
+  tasks:
+    - name: Remove existing known host
+      known_hosts:
+        name: run.fcd.dev
+        state: absent
+
+    - name: Wait until DNS is resolving
+      command: host run.fcd.dev
+      register: bors_ip
+      retries: 10
+      delay: 60
+      until: bors_ip.rc == 0
+
+    - name: Remove host keys for IPs of previous instances
+      lineinfile:
+        path: '{{ ansible_user_dir }}/.ssh/known_hosts'
+        regexp: '^{{ bors_ip.stdout.split()[-1] }} .*'
+        state: absent
+      delegate_to: localhost
+
+    - name: Add keys for host
+      shell: ssh-keyscan run.fcd.dev | grep ecdsa-sha2-nistp256 >> '{{ ansible_user_dir }}/.ssh/known_hosts'
+
+- hosts: bors
+  name: Init bors
+
+  vars:
+    bors_version: v0.1.0
+    user_bin: '{{ ansible_user_dir }}/bin'
+
+  tasks:
+    - name: Ensure user bin
+      file:
+        name: '{{ user_bin }}'
+        state: directory
+
+    - name: Download bors
+      get_url:
+        url: 'https://github.com/femnad/bors/releases/download/{{ bors_version }}/bors'
+        dest: '{{ user_bin }}'
+        mode: '0755'
+
+    - name: Download contrib files
+      get_url:
+        url: 'https://raw.githubusercontent.com/femnad/bors/master/contrib/{{ item }}'
+        dest: '{{ ansible_user_dir }}'
+      loop:
+        - bors.sh
+        - routes.yml
+
+    - name: Download caddy
+      unarchive:
+        src: https://github.com/caddyserver/caddy/releases/download/v2.2.1/caddy_2.2.1_linux_amd64.tar.gz
+        dest: /usr/local/bin
+        remote_src: yes
+        exclude:
+          - LICENSE
+          - README.md
+      become: yes
+
+    - name: Caddy service
+      vars:
+        exec: /usr/local/bin/caddy reverse-proxy --from run.fcd.dev --to localhost:8080
+        description: Caddy
+      template:
+        src: basic.service.j2
+        dest: /usr/lib/systemd/system/caddy.service
+      become: yes
+
+    - name: Ensure user services dir
+      file:
+        name: '{{ ansible_user_dir }}/.config/systemd/user'
+        state: directory
+
+    - name: Bors service
+      vars:
+        exec: '{{ user_bin}}/bors -f {{ user_bin }}/routes.yml'
+        description: Bors
+      template:
+        src: basic.service.j2
+        dest: '{{ ansible_user_dir }}/.config/systemd/user/bors.service'
+      become: yes
+
+    - name: Bors started
+      systemd:
+        name: bors
+        state: started
+        daemon_reload: yes
+        scope: user
+
+    - name: Caddy started
+      systemd:
+        name: caddy
+        state: started
+        daemon_reload: yes
+      become: yes
+...
