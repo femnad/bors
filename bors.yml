@@ -90,7 +90,6 @@
       template:
         src: basic.service.j2
         dest: '{{ ansible_user_dir }}/.config/systemd/user/bors.service'
-      become: yes
 
     - name: Bors started
       systemd:
