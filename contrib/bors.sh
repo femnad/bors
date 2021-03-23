@@ -119,10 +119,6 @@ self:
   host: localhost
   user: ${current_user}
   priv: agent-forwarding
-sudo:
-  host: localhost
-  user: ${current_user}
-  priv: agent-forwarding
   sudo: true
 EOF
 }
