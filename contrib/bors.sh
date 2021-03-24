@@ -100,8 +100,7 @@ function salt_apply() {
     init_chezmoi
     activate_venv salt
     pushd "$SALT_STATES"
-    salt-ssh self state.apply packages
-    salt-ssh self state.apply all
+    salt-ssh self state.apply
     deactivate_venv salt
     popd
 }
