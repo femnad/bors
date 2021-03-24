@@ -73,7 +73,12 @@ function install_packages() {
     esac
 }
 
-function init_chezmoi() {
+function maybe_download_chezmoi() {
+    if [ -f "${HOME}/bin/chezmoi" ]
+    then
+        return
+    fi
+
     tempdir=$(mktemp -d)
     pushd $tempdir
     curl -L "https://github.com/twpayne/chezmoi/releases/download/v2.0.3/chezmoi_2.0.3_linux_amd64.tar.gz" -OJ
@@ -81,6 +86,10 @@ function init_chezmoi() {
     popd
     mv "${tempdir}/chezmoi" "${HOME}/bin"
     rm -r "$tempdir"
+}
+
+function init_chezmoi() {
+    maybe_download_chezmoi
 
     "${HOME}/bin/chezmoi" init https://gitlab.com/femnad/chezmoi.git
     "${HOME}/bin/chezmoi" apply
