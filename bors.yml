@@ -23,7 +23,7 @@
       delegate_to: localhost
 
     - name: Add keys for host
-      shell: ssh-keyscan run.fcd.dev | grep ecdsa-sha2-nistp256 >> '{{ ansible_user_dir }}/.ssh/known_hosts'
+      shell: ssh-keyscan run.fcd.dev | grep ssh-rsa >> '{{ ansible_user_dir }}/.ssh/known_hosts'
 
 - hosts: bors
   name: Init bors

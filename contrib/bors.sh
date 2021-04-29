@@ -84,7 +84,8 @@ function maybe_download_chezmoi() {
     curl -L "https://github.com/twpayne/chezmoi/releases/download/v2.0.3/chezmoi_2.0.3_linux_amd64.tar.gz" -OJ
     tar xf "chezmoi_2.0.3_linux_amd64.tar.gz"
     popd
-    mv "${tempdir}/chezmoi" "${HOME}/bin"
+    mkdir -p "${HOME}/bin"
+    mv "${tempdir}/chezmoi" "${HOME}/bin/chezmoi"
     rm -r "$tempdir"
 }
 
