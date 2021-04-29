@@ -78,6 +78,12 @@
         dest: /usr/lib/systemd/system/caddy.service
       become: yes
 
+    - name: Persistent Systemd storage enabled for user services:
+      lineinfile:
+        path: /etc/systemd/journald.conf
+        regexp: '#Storage=(auto|volatile)'
+        line: Storage=persistent
+
     - name: Ensure user services dir
       file:
         name: '{{ ansible_user_dir }}/.config/systemd/user'
