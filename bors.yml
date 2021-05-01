@@ -78,7 +78,7 @@
         dest: /usr/lib/systemd/system/caddy.service
       become: yes
 
-    - name: Persistent Systemd storage enabled for user services:
+    - name: Persistent Systemd storage enabled for user services
       lineinfile:
         path: /etc/systemd/journald.conf
         regexp: '#Storage=(auto|volatile)'
