@@ -114,6 +114,7 @@ function main() {
     install_packages
     venv_install_ansible
     ansible_pull
+    salt_apply sudo
     salt_apply self
 }
 
