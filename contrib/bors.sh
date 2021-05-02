@@ -109,27 +109,11 @@ function salt_apply() {
     popd
 }
 
-function gcp_auth() {
-    read -p 'Ask someone close to you for a password sync '
-    project=$(pass gcp/project)
-    gcloud auth login
-    gcloud config set project "$project"
-    gcloud auth application-default login
-    gcloud auth application-default set-quota-project "$project"
-}
-
-function wrap_up() {
-    wgs
-}
-
 function main() {
     install_packages
     venv_install_ansible
     ansible_pull
     salt_apply self
-    gcp_auth
-    salt_apply user
-    wrap_up
 }
 
 main
