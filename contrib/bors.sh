@@ -2,6 +2,7 @@
 set -euo pipefail
 
 BASE_VENV="$HOME/.venv"
+CHEZMOI_VERSION=2.0.11
 ORIGINAL_PATH="$PATH"
 SALT_HOME="${HOME}/.salt"
 SALT_CONFIG="${SALT_HOME}/config"
@@ -81,8 +82,8 @@ function maybe_download_chezmoi() {
 
     tempdir=$(mktemp -d)
     pushd $tempdir
-    curl -L "https://github.com/twpayne/chezmoi/releases/download/v2.0.3/chezmoi_2.0.3_linux_amd64.tar.gz" -OJ
-    tar xf "chezmoi_2.0.3_linux_amd64.tar.gz"
+    curl -L "https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VERSION}/chezmoi_${CHEZMOI_VERSION}_linux_amd64.tar.gz" -OJ
+    tar xf "chezmoi_${CHEZMOI_VERSION}_linux_amd64.tar.gz"
     popd
     mkdir -p "${HOME}/bin"
     mv "${tempdir}/chezmoi" "${HOME}/bin/chezmoi"
@@ -98,19 +99,37 @@ function init_chezmoi() {
 
 
 function salt_apply() {
+    target=$1
+
     init_chezmoi
     activate_venv salt
     pushd "$SALT_STATES"
-    salt-ssh self state.apply
+    salt-ssh $target state.apply
     deactivate_venv salt
     popd
+}
+
+function gcp_auth() {
+    read -p 'Ask someone close to you for a password sync '
+    project=$(pass gcp/project)
+    gcloud auth login
+    gcloud config set project "$project"
+    gcloud auth application-default login
+    gcloud auth application-default set-quota-project "$project"
+}
+
+function wrap_up() {
+    wgs
 }
 
 function main() {
     install_packages
     venv_install_ansible
     ansible_pull
-    salt_apply
+    salt_apply self
+    gcp_auth
+    salt_apply user
+    wrap_up
 }
 
 main
