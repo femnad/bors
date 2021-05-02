@@ -12,6 +12,8 @@ function bor() {
 
     terraform apply -auto-approve
     ansible-playbook bors.yml
+
+    read -p 'Ready when you are '
     terraform destroy -auto-approve
 
     popd
