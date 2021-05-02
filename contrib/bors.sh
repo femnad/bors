@@ -104,6 +104,7 @@ function salt_apply() {
     init_chezmoi
     activate_venv salt
     pushd "$SALT_STATES"
+    salt-pre-flight
     salt-ssh $target state.apply
     deactivate_venv salt
     popd
