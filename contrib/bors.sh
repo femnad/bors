@@ -115,7 +115,7 @@ function main() {
     venv_install_ansible
     ansible_pull
     salt_apply sudo
-    salt_apply self
+    salt_apply user
 }
 
 main
