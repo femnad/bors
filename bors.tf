@@ -3,37 +3,94 @@ terraform {
 }
 
 provider "google" {
-  project = var.project
-  region  = var.region
-  zone    = var.zone
-}
-
-module "instance" {
-  source      = "femnad/instance-module/gcp"
-  version     = "0.7.7"
-  github_user = "femnad"
   project     = var.project
-  ssh_user    = var.ssh_user
+  region      = var.region
+  zone        = var.zone
 }
 
-module "dns" {
-  source           = "femnad/dns-module/gcp"
-  version          = "0.3.1"
-  dns_name         = "run.fcd.dev."
-  instance_ip_addr = module.instance.instance_ip_addr
-  managed_zone     = var.managed_zone
-  project          = var.project
+resource "google_project_service" "run" {
+  service = "run.googleapis.com"
 }
 
-module "firewall-module" {
-  source  = "femnad/firewall-module/gcp"
-  version = "0.2.3"
-  network = module.instance.network_name
-  project          = var.project
-  self_reachable = {
-    "8080" = "tcp"
+resource "google_cloud_run_service" "bors" {
+  depends_on = [null_resource.submit-build, google_project_service.run]
+
+  name     = "bors-cloudrun-service"
+  location = var.cloud_run_location
+
+  traffic {
+    latest_revision = true
+    percent         = 100
   }
-  world_reachable = {
-    "80,443" = "tcp"
+
+  metadata {
+    annotations = {
+      "client.knative.dev/user-image" = "gcr.io/foolproj/bors:${var.tag}"
+    }
+    labels = {
+      "cloud.googleapis.com/location" = "europe-west1"
+    }
+    namespace = "foolproj"
   }
+
+  template {
+    spec {
+
+      containers {
+        image = "gcr.io/${var.project}/bors:${var.tag}"
+
+        resources {
+          limits = {
+            "cpu"    = "1000m"
+            "memory" = "256Mi"
+          }
+        }
+      }
+    }
+  }
+}
+
+data "google_iam_policy" "noauth" {
+  binding {
+    role = "roles/run.invoker"
+    members = [
+      "allUsers",
+    ]
+  }
+}
+
+resource "google_cloud_run_service_iam_policy" "noauth" {
+  location = google_cloud_run_service.bors.location
+  project  = google_cloud_run_service.bors.project
+  service  = google_cloud_run_service.bors.name
+
+  policy_data = data.google_iam_policy.noauth.policy_data
+}
+
+resource "google_dns_record_set" "ghs-cname" {
+  type = "CNAME"
+  ttl  = 60
+
+  managed_zone = var.managed_zone
+
+  rrdatas = ["ghs.googlehosted.com."]
+
+  for_each = var.dns_records
+
+  name = format("%s.", each.value)
+}
+
+resource "google_cloud_run_domain_mapping" "bors-mapping" {
+  location = var.cloud_run_location
+  metadata {
+    namespace = var.project
+  }
+
+  spec {
+    route_name = google_cloud_run_service.bors.name
+  }
+
+  for_each = var.dns_records
+
+  name = each.value
 }
