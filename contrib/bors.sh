@@ -20,11 +20,13 @@ function maybe_sudo() {
 }
 
 function dnf_install() {
+    maybe_sudo dnf update -y
     maybe_sudo dnf install -y curl git python3-virtualenv
 }
 
 function apt_install() {
     maybe_sudo apt update
+    maybe_sudo apt upgrade -y
     maybe_sudo apt install -y curl git python3-virtualenv
 }
 
@@ -51,7 +53,7 @@ function venv_install_ansible() {
 function ansible_pull() {
     activate_venv ansible
     inventory="$(hostname),"
-    ansible-pull -U https://github.com/femnad/casastrap.git -i "$inventory" init-fup.yaml -e ansible_python_interpreter=/usr/bin/python3 --diff
+    ansible-pull -U https://github.com/femnad/casastrap.git -i "$inventory" init-fup.yml -e ansible_python_interpreter=/usr/bin/python3 --diff
 }
 
 function install_packages() {
