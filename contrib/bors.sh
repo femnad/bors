@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_VENV="$HOME/.venv"
-CHEZMOI_VERSION=2.0.11
+BASE_VENV="$HOME/.local/share/venv"
+CHEZMOI_VERSION=2.16.0
 ORIGINAL_PATH="$PATH"
-SALT_HOME="${HOME}/.salt"
-SALT_CONFIG="${SALT_HOME}/config"
-SALT_STATES="${HOME}/z/fm/anr"
 
 function get_os_id() {
     cat /etc/os-release | grep -E '^ID=' | awk -F = '{print $2}'
@@ -54,7 +51,7 @@ function venv_install_ansible() {
 function ansible_pull() {
     activate_venv ansible
     inventory="$(hostname),"
-    ansible-pull -U https://github.com/femnad/casastrap.git -i "$inventory" init-salt.yaml -e ansible_python_interpreter=/usr/bin/python3 --diff
+    ansible-pull -U https://github.com/femnad/casastrap.git -i "$inventory" init-fup.yaml -e ansible_python_interpreter=/usr/bin/python3 --diff
 }
 
 function install_packages() {
@@ -98,24 +95,15 @@ function init_chezmoi() {
 }
 
 
-function salt_apply() {
-    target=$1
-
-    init_chezmoi
-    activate_venv salt
-    pushd "$SALT_STATES"
-    salt-pre-flight
-    salt-ssh $target state.apply
-    deactivate_venv salt
-    popd
+function fup() {
+    ${HOME}/bin/fup
 }
 
 function main() {
     install_packages
     venv_install_ansible
     ansible_pull
-    salt_apply sudo
-    salt_apply user
+    fup
 }
 
 main
