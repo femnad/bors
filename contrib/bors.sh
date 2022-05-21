@@ -26,7 +26,7 @@ function dnf_install() {
 
 function apt_install() {
     maybe_sudo apt update
-    maybe_sudo apt autoremove
+    maybe_sudo apt autoremove -y
     maybe_sudo apt upgrade -y
     maybe_sudo apt install -y curl git python3-virtualenv
 }
