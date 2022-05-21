@@ -26,6 +26,7 @@ function dnf_install() {
 
 function apt_install() {
     maybe_sudo apt update
+    maybe_sudo apt autoremove
     maybe_sudo apt upgrade -y
     maybe_sudo apt install -y curl git python3-virtualenv
 }
@@ -103,6 +104,7 @@ function fup() {
 
 function main() {
     install_packages
+    init_chezmoi
     venv_install_ansible
     ansible_pull
     fup
