@@ -99,7 +99,10 @@ function init_chezmoi() {
 
 
 function fup() {
-    ${HOME}/bin/fup
+    "${HOME}/bin/chezmoi" apply
+    pushd "${HOME}/z/fm/fup"
+    "${BASE_VENV}/pyinfra/bin/pyinfra" @local main.py
+    popd > /dev/null
 }
 
 function main() {
