@@ -34,14 +34,11 @@ function apt_install() {
 function activate_venv() {
     venv="$1"
 
-    venv_bin="${BASE_VENV}/${venv}/bin"
-    export PATH="${venv_bin}:$PATH"
-    export VIRTUAL_ENV="${BASE_VENV}/venv"
+    source "${BASE_VENV}/${venv}/bin/activate"
 }
 
 function deactivate_venv() {
-    export PATH="$ORIGINAL_PATH"
-    unset VIRTUAL_ENV
+    deactivate
 }
 
 function venv_install_ansible() {
@@ -99,10 +96,14 @@ function init_chezmoi() {
 
 
 function fup() {
+    activate_venv "pyinfra"
+
     "${HOME}/bin/chezmoi" apply
     pushd "${HOME}/z/fm/fup"
     "${BASE_VENV}/pyinfra/bin/pyinfra" @local main.py
     popd > /dev/null
+
+    deactivate
 }
 
 function main() {
